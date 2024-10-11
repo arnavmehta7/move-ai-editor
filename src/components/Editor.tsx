@@ -19,13 +19,13 @@ export function CodeEditor({ code, setCode }: EditorProps) {
 
   return (
     <MonacoEditor
-      height="400px"
+      height="70vh"
       defaultLanguage="rust"
       value={code}
       onChange={handleEditorChange}
       theme="vs-dark"
       options={{
-        minimap: { enabled: false },
+        minimap: { enabled: true },
         fontSize: 14,
         wordWrap: 'on',
       }}
