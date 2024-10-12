@@ -1,3 +1,4 @@
+import json
 import os
 import traceback
 from dotenv import load_dotenv
@@ -6,10 +7,12 @@ from typing import List
 from fastapi import FastAPI, HTTPException, Path, Query
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
 import subprocess
 
 load_dotenv()
 
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 app = FastAPI()
 
 # Setup CORS
@@ -58,6 +61,41 @@ async def test(req: TestCasePayload):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+class QueryPayload(BaseModel):
+    query: str
+
+@app.post('/answer-query')
+async def answer_query(req: QueryPayload):
+    try:
+        with open("prompt.txt") as f:
+            chat_completion = client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": f.read()},
+                    {
+                        "role": "user",
+                        "content": req.query + "Start name of module with `module hello_blockchain::<fn>` and make sure to have tests.",
+                    }
+                ],
+                model="gpt-4o",
+                response_format={ "type": "json_object" }
+            )
+            output = chat_completion.choices[0].message.content
+            print(output)
+            response = json.loads(output)["output"]
+            extracted_code = ""
+            if "```" in response:
+                extracted_code = response.split("```")[1].strip().replace("move\n", "").strip()
+            
+            return {
+                "response": response,
+                "extracted_code": extracted_code
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)+traceback.format_exc())
+
 
 if __name__ == "__main__":
     import uvicorn
