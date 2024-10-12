@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 
 interface LLMPromptProps {
   setCode: (code: string) => void;
+  onGenerateCode: (generating: boolean) => void; // New prop for handling code generation
 }
 
-export function LLMPrompt({ setCode }: LLMPromptProps) {
+export function LLMPrompt({ setCode, onGenerateCode }: LLMPromptProps) {
   const [prompt, setPrompt] = useState('');
 
   const handleSubmit = async () => {
+    onGenerateCode(true); // Call the new prop function to show loader
     try {
       const response = await fetch("http://localhost:8000/answer-query", {
         method: "POST",
@@ -26,7 +28,8 @@ export function LLMPrompt({ setCode }: LLMPromptProps) {
       const data = await response.json();
       const extractedCode = data.extracted_code || "// No code extracted";
       setCode(extractedCode);
-    } catch (error) {
+      onGenerateCode(false); // Call the new prop function to show loader
+  } catch (error) {
       console.error("Error fetching code:", error);
       setCode("// Error fetching code");
     }
